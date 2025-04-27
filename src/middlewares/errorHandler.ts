@@ -1,21 +1,60 @@
-import { NextFunction, Request, Response } from "express";
-
-interface AppError extends Error {
-  statusCode: number;
-}
+import { Request, Response, NextFunction } from "express";
+import { BaseResponse } from "../utils/response.util";
+import {
+  ConflictError,
+  DatabaseError,
+  ForbiddenError,
+  InternalServerError,
+  NotFoundError,
+  ServiceUnavailableError,
+  TooManyRequestsError,
+  UnauthorizedError,
+  ValidationError,
+} from "@/errors/errors";
+import mongoose from 'mongoose';
 
 export const errorHandler = (
-  err: AppError,
+  err: Error,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
+  // Si el error ya es una instancia de nuestros errores personalizados
+  if (
+    err instanceof ValidationError ||
+    err instanceof UnauthorizedError ||
+    err instanceof ForbiddenError ||
+    err instanceof NotFoundError ||
+    err instanceof ConflictError ||
+    err instanceof DatabaseError ||
+    err instanceof InternalServerError ||
+    err instanceof ServiceUnavailableError ||
+    err instanceof TooManyRequestsError
+  ) {
+    const response = new BaseResponse().setError(err).build();
 
-  res.status(statusCode).json({
-    status: "error",
-    statusCode,
-    message,
-  });
+    return res.status(response.headers.code).json(response);
+  }
+
+  // Si es un error de validación de Mongoose
+  if (err.name === "ValidationError") {
+    const mongooseError = err as mongoose.Error.ValidationError;
+    const response = new BaseResponse()
+      .setError(
+        new ValidationError({
+          message: mongooseError.message,
+          field: mongooseError.errors ? Object.keys(mongooseError.errors)[0] : undefined
+        })
+      )
+      .build();
+
+    return res.status(response.headers.code).json(response);
+  }
+
+  // Para cualquier otro error no manejado
+  const response = new BaseResponse()
+    .setError(new InternalServerError(err.message))
+    .build();
+
+  return res.status(response.headers.code).json(response);
 };
