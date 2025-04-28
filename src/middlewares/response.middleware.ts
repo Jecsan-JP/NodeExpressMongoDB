@@ -9,12 +9,14 @@ export const responseMiddleware = (
   // Guardamos la función original de res.json
   const originalJson = res.json;
 
-  // Sobrescribimos res.json para formatear todas las respuestas
   res.json = function (body: any) {
-    // Creamos una nueva respuesta usando BaseResponse
-    const response = new BaseResponse(body).build();
+    // Si la respuesta ya tiene headers (es un error), no la formateamos
+    if (body && body.headers) {
+      return originalJson.call(this, body);
+    }
 
-    // Llamamos a la función original con nuestra respuesta formateada
+    // Si no, la formateamos como respuesta exitosa
+    const response = new BaseResponse(body).build();
     return originalJson.call(this, response);
   };
 

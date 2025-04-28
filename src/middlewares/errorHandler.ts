@@ -11,7 +11,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from "@/errors/errors";
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 export const errorHandler = (
   err: Error,
@@ -39,11 +39,14 @@ export const errorHandler = (
   // Si es un error de validación de Mongoose
   if (err.name === "ValidationError") {
     const mongooseError = err as mongoose.Error.ValidationError;
+    console.error("Error de Mongoose:", mongooseError);
     const response = new BaseResponse()
       .setError(
         new ValidationError({
           message: mongooseError.message,
-          field: mongooseError.errors ? Object.keys(mongooseError.errors)[0] : undefined
+          field: mongooseError.errors
+            ? Object.keys(mongooseError.errors)[0]
+            : undefined,
         })
       )
       .build();
@@ -52,6 +55,7 @@ export const errorHandler = (
   }
 
   // Para cualquier otro error no manejado
+  console.error("Error no manejado:", err);
   const response = new BaseResponse()
     .setError(new InternalServerError(err.message))
     .build();

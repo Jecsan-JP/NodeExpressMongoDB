@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 // Interface para el tipo de documento
 interface IUser {
@@ -59,3 +59,14 @@ const userSchema = new Schema<IUser>(
     timestamps: true, //Mongose automaticamente agrega los campos createdAt:fecha de creación del documento y updatedAt: fecha de última actualización
   }
 );
+
+userSchema.pre('find', function() {
+  this.where({ status: 'active' });
+});
+
+userSchema.pre('findOne', function() {
+  this.where({ status: 'active' });
+});
+
+// Exportamos el modelo
+export const User = mongoose.model<IUser>("User2", userSchema);

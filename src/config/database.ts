@@ -3,8 +3,13 @@ import mongoose from "mongoose";
 export const connectDB = async () => {
   try {
     //URL de conexión desde variables de entorno
-    const mongoURI =
-      process.env.MONGO_URI || "mongodb://localhost:27017/tu-base-de-datos";
+    if (!process.env.MONGODB_URI) {
+      throw new Error(
+        "❌ MONGO_URI no está definida en las variables de entorno"
+      );
+    }
+
+    const mongoURI = process.env.MONGODB_URI;
 
     // Opciones de conexión
     const options = {
@@ -28,7 +33,7 @@ export const connectDB = async () => {
     };
 
     // Conectar a MongoDB
-    await mongoose.connect(mongoURI, options);
+    await mongoose.connect(mongoURI);
 
     // Eventos de conexión
     mongoose.connection.on("connected", () => {
